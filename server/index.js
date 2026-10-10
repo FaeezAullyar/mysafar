@@ -1,0 +1,12 @@
+import {createServer} from 'node:http';
+import {openDatabase} from './db.js';
+import {createApp} from './app.js';
+const db=await openDatabase();
+const handler=await createApp(db);
+const server=createServer(handler);
+server.requestTimeout=15000;
+server.headersTimeout=10000;
+const port=Number(process.env.PORT||3000);
+server.listen(port,process.env.NODE_ENV==='production'?'0.0.0.0':'127.0.0.1',()=>console.log(`MySafar ready at http://127.0.0.1:${port}`));
+const cleanup=setInterval(async()=>{try{await db.query('DELETE FROM sessions WHERE expires_at<NOW()');await db.query('DELETE FROM auth_limits WHERE expires_at<NOW()');}catch{console.error('Session cleanup failed.');}},3600000);cleanup.unref();
+for(const signal of ['SIGTERM','SIGINT'])process.on(signal,()=>{clearInterval(cleanup);server.close(async()=>{await db.close();process.exit(0);});});
