@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { digest,safeEqual,hashPassword,verifyPassword,validDate,validId,validText } from './security.js';
 import sharp from 'sharp';
+import {validSchoolDate} from '../dist/school.js';
 import {HOUSES,TARGET_LIMITS,validPass} from './settings.js';
 const publicDir=path.resolve(fileURLToPath(new URL('../dist/',import.meta.url)));
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'};
@@ -61,7 +62,7 @@ export async function createApp(db,env=process.env){
     if(req.headers['sec-fetch-site']&& !['same-origin','none'].includes(req.headers['sec-fetch-site']))fail(403,'This request is not allowed from another website.');
    }
    if(pathname==='/api/health'&&req.method==='GET'){await db.query('SELECT 1');return respond(200,{ok:true});}
-   if(pathname==='/api/config'&&req.method==='GET')return respond(200,{demo,authReady:true,houses:HOUSES,targetLimits:TARGET_LIMITS});
+   if(pathname==='/api/config'&&req.method==='GET')return respond(200,{demo,authReady:true,schoolDays:[6,0],houses:HOUSES,targetLimits:TARGET_LIMITS});
    if(pathname==='/api/auth/signup'&&req.method==='POST'){
     await rate('signup-network:'+req.socket.remoteAddress,30,15);
     const data=await body(req);const {name,password,invite}=data;const email=typeof data.email==='string'?data.email.trim().toLowerCase():'';
@@ -138,6 +139,7 @@ export async function createApp(db,env=process.env){
    if(pathname==='/api/scores'&&req.method==='PUT'){
     const data=await body(req);
     if(!validId(data.studentId)||!validDate(data.date)||!['quran','memorisation'].includes(data.kind))fail(400,'Choose a valid student, date and tracker.');
+    if(!validSchoolDate(data.date))fail(400,'Classes run on Saturdays and Sundays. Choose a weekend date.');
     if(data.value!==null&&(data.kind==='quran'?!(Number.isInteger(data.value)&&data.value>=1&&data.value<=5):!validPass(data.value)))fail(400,data.kind==='quran'?'Choose a score from 1 to 5.':'Choose a valid level and target.');
     await db.transaction(async tx=>{
      await tx.query('SELECT id FROM teachers WHERE id=$1 FOR UPDATE',[user.id]);
