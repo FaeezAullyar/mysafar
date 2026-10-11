@@ -1,6 +1,6 @@
 # MySafar
 
-A teacher workspace for Enfield: daily Qur’an scores, memorisation targets, class setup, teacher profiles and a staff directory. Includes a Railway-ready PostgreSQL backend.
+A teacher workspace for Enfield: weekend Qur’an scores, memorisation targets, class setup, teacher profiles and a staff directory. Includes a Railway-ready PostgreSQL backend.
 
 ## Try it in Codex
 
@@ -12,10 +12,11 @@ The current preview is at **http://127.0.0.1:3000**. It runs on this computer; i
 - In **Qur’an**, select a box and choose a **score** from 1–5. These numbers are scores, not counts of passes. The picker also accepts number keys.
 - In **Memorisation**, choose a level and target, then record the pass. The box shows a code such as **L1T4**. There is no numeric score: an entry is either a passed target or blank. **Clear entry** returns either tracker to blank.
 - Houses are **Makkah**, **Al-Aqsa** and **Madinah**.
-- The arrows or left/right keyboard keys move between days; mobile users can also tap the date strip or swipe across the tracker. **Today** returns to the current date.
+- Classes run on **Saturdays and Sundays**. The arrows, keyboard keys and mobile swipes move between weekend sessions. During the week the tracker opens the next Saturday, with a **Next session** button. Weekdays are disabled in the calendar, and the server rejects weekday entries. Existing weekday records are retained in the database; they are excluded from weekend charts.
 - The calendar button fades to a twelve-month view; selecting a day reopens the tracker. The pencil edits the class.
 - Use the lower sidebar toggle to expand or collapse navigation. Phones use bottom navigation and larger entry sheets.
 - Open **Profile** to change your name, photo and short bio, or toggle dark mode. The theme follows the device initially and saves your choice to your account.
+- **Data** shows one chart at a time: **Line**, **Pie** or **Scatter**. Filters select 4, 8 or 12 weekends, an ending session, house and student. Qur’an charts show recorded scores and their averages/distribution. Memorisation charts show recorded passes per session, passes by level, and exact passed targets. Missing entries are gaps, never zero scores; hover, focus or tap chart marks to inspect results.
 - **Teachers** shows searchable teacher profiles for signed-in users. The sample class cannot access the directory. Teachers cannot view one another’s students or records.
 - New accounts receive a short tutorial. Replay it with **Show tutorial** in the profile menu.
 
@@ -51,7 +52,7 @@ This creates a local PGlite database under ignored `.local-preview/db`. PGlite r
 5. Deploy. Railway uses the Dockerfile, provides `PORT`, and checks `/api/health`. Tables are created on first startup. Deployments fail closed if the database, HTTPS origin, or teacher access code is missing.
 6. Create a teacher account with the school code, add a class, and check a score persists after logging out and in again.
 
-No GitHub repository was created and no Railway service was changed in this build. Railway configuration and a live PostgreSQL deployment still need to be supplied and verified.
+Railway configuration and a live PostgreSQL deployment still need to be supplied and verified. The source includes the Dockerfile, startup schema and health check needed for deployment.
 
 Railway documentation: [PostgreSQL](https://docs.railway.com/databases/postgresql), [service variables](https://docs.railway.com/variables), [Dockerfile deployment](https://docs.railway.com/guides/dockerfiles).
 
@@ -97,7 +98,7 @@ Memorisation passes use a separate `memorisation_passes` table. Schema changes r
 
 ## Verification
 
-`pnpm test` runs 16 integration/security tests against an isolated in-memory PostgreSQL-compatible PGlite instance. All passed during this build:
+`pnpm test` runs 22 integration, security and calculation tests against an isolated in-memory PostgreSQL-compatible PGlite instance. All passed during this build:
 
 - Password hash salting and verification; calendar date validation.
 - Static file serving and blocking sensitive source paths.
@@ -105,10 +106,11 @@ Memorisation passes use a separate `memorisation_passes` table. Schema changes r
 - Invitation checks, session cookie flags, and hashed token storage.
 - Account isolation, class validation, and score ownership checks.
 - Qur’an score range validation, subject separation, clearing, and persistence.
+- Weekend-only API validation, session navigation across year/DST boundaries, chart period boundaries, missing-entry handling and house/student filtering.
 - All eight memorisation level boundaries and rejection of numeric or invalid passes.
 - Preservation of legacy numeric memorisation records without interpreting them as passes.
 - Profile preferences, teacher directory privacy and search, photo validation, normalisation and authenticated access.
 - Class edits preserving scores and removal cascading correctly.
 - Logout invalidation, login recovery, throttling, and expired sessions.
 
-Browser checks covered the login screen, local account authentication, class setup and house choices, score entry, memorisation level/target limits and reload persistence, day navigation, calendar selection, sidebar expansion, the tutorial, saved theme preferences, profile photo upload and bio persistence, the teacher directory, and the 390-pixel mobile layout. The Railway container and a remote PostgreSQL connection have not been exercised yet.
+Browser checks covered the login screen, local account authentication, class setup and house choices, score entry, memorisation level/target limits and reload persistence, day navigation, calendar selection, sidebar expansion, the tutorial, saved theme preferences, profile photo upload and bio persistence, the teacher directory, weekend navigation and disabled calendar weekdays, all three charts, data filters, and the 390-pixel mobile layout. The Railway container and a remote PostgreSQL connection have not been exercised yet.

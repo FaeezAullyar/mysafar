@@ -1,0 +1,8 @@
+node_modules/
+.local-preview/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.openai/
