@@ -49,6 +49,16 @@ test('scores persist, validate range, separate subjects and reject another teach
  assert.equal((await request('/data',{cookie:alice})).body.scores[`${studentId}|2026-10-10|quran`],undefined);
 });
 
+test('weekend-only tracking rejects weekday entries for both subjects',async()=>{
+ assert.deepEqual((await request('/config')).body.schoolDays,[6,0]);
+ for(const date of ['2026-10-12','2026-10-13','2026-10-14','2026-10-15','2026-10-16']){
+  for(const kind of ['quran','memorisation']){
+   const response=await request('/scores',{method:'PUT',cookie:alice,data:{studentId,date,kind,value:kind==='quran'?4:{level:1,target:4}}});
+   assert.equal(response.status,400);assert.match(response.body.error,/Saturdays and Sundays/);
+  }
+ }
+ assert.equal((await request('/scores',{method:'PUT',cookie:alice,data:{studentId,date:'2026-10-11',kind:'quran',value:4}})).status,200);
+});
 test('memorisation enforces the exact level and target boundaries',async()=>{
  assert.deepEqual(TARGET_LIMITS,{'1':9,'2':9,'3':9,'4':9,'5':10,'6':8,'7':10,'8':12});
  const data={studentId,date:'2026-10-11',kind:'memorisation'};
